@@ -23,9 +23,9 @@ abstract class AbstractBackend
      * serialized because it contains invaluable metadata
      */
     abstract public function set(
-        string $zone,
         string $key,
         CachedValue $data,
+        string $group,
         $expire = null
     ): void;
 
@@ -33,20 +33,15 @@ abstract class AbstractBackend
      * Restore the CachedValue from instance from the backend. Use
      * unserialize() to get the CachedValue instance
      */
-    abstract public function get(string $zone, string $key): ?CachedValue;
+    abstract public function get(string $key, string $cache_group): ?CachedValue;
 
     /**
      * Delete cache key from the given zone
      */
-    abstract public function delete(string $zone, string $key): bool;
+    abstract public function delete(string $key): void;
 
     /**
-     * Delete all keys stored the zone
+     * Clear all cached intries from backend
      */
-    abstract public function clear_zone(string $zone): bool;
-
-    /**
-     * Clear all cached intries from backend in every zone
-     */
-    abstract public function clear(): bool;
+    abstract public function clear(string $cache_group): bool;
 }

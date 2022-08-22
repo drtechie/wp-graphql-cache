@@ -20,7 +20,7 @@ class MeasurePerformance
         }
 
         add_action(
-            'do_graphql_request',
+            'init_graphql_request',
             [self::class, '__action_do_graphql_request'],
             -10000
         );

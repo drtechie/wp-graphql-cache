@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: WPGraphQL Cache
+ * Plugin Name: WPGraphQL Cache Reinvented
  * Plugin URI: https://github.com/valu-digital/wp-graphql-cache
  * Description: Add caching for WPGraphQL
  * Author: Esa-Matti Suuronen, Valu Digital Oy

@@ -7,19 +7,14 @@ namespace WPGraphQL\Extensions\Cache;
 abstract class AbstractCache
 {
     /**
-     * The zone name this field belongs to
+     * @type Backend\AbstractBackend
      */
-    protected $zone = null;
+    protected $backend = null;
 
     /**
      * Expire cached value after given seconds
      */
-    protected $expire = null;
-
-    /**
-     * @type Backend\AbstractBackend
-     */
-    protected $backend = null;
+    protected $expire = 60 * 60;
 
     /**
      * Restored value from the cache backend
@@ -33,16 +28,9 @@ abstract class AbstractCache
      */
     protected $key = null;
 
-    function __construct($config)
+    function __construct()
     {
-        if (empty($config['zone'])) {
-            $this->zone = 'default';
-        } else {
-            $this->zone = $config['zone'];
-        }
-
         $this->backend = $config['backend'] ?? null;
-
         if (!empty($config['expire'])) {
             $this->expire = intval($config['expire']);
         }
@@ -69,11 +57,25 @@ abstract class AbstractCache
     {
         if (null === $this->key) {
             throw new \Error(
-                'Cache key not generated yet. FieldCache#get_cache_key() can be called only after the graphql_pre_resolve_field filter'
+                'Cache key not generated yet.'
             );
         }
 
         return $this->key;
+    }
+
+    /**
+     * Get the cache group
+     */
+    function get_cache_group(): string
+    {
+        if (null === $this->cache_group) {
+            throw new \Error(
+                'Cache group not generated yet.'
+            );
+        }
+
+        return $this->cache_group;
     }
 
     /**
@@ -82,14 +84,9 @@ abstract class AbstractCache
     function read_cache()
     {
         $this->cached_value = $this->backend->get(
-            $this->zone,
-            $this->get_cache_key()
+            $this->get_cache_key(),
+            $this->get_cache_group()
         );
-
-        if ($this->cached_value && $this->has_expired()) {
-            Utils::log('EXPIRED ' . $this->get_cache_key());
-            $this->delete();
-        }
     }
 
     /**
@@ -98,30 +95,7 @@ abstract class AbstractCache
     function delete()
     {
         $this->cached_value = null;
-        $this->backend->delete($this->zone, $this->get_cache_key());
-    }
-
-    /**
-     * Clear the used zone from the backend
-     */
-    function clear_zone()
-    {
-        $this->cached_value = null;
-        $this->backend->clear_zone($this->zone);
-    }
-
-    /**
-     * Check if the value has been expired
-     */
-    function has_expired(): bool
-    {
-        if (empty($this->expire)) {
-            return false;
-        }
-
-        $age = microtime(true) - $this->cached_value->get_created();
-        $max_age = $this->expire;
-        return $age > $max_age;
+        $this->backend->delete($this->get_cache_key());
     }
 
     /**

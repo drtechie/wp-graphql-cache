@@ -14,25 +14,14 @@ class WPCLICommand
     /**
      * Clears cache
      *
-     * ## OPTIONS
-     *
-     * [--zone=<type>]
-     * : Clear the given zone only
-     *
      * ## EXAMPLES
      *
-     *     wp graphql-cache clear --zone menus
+     *     wp graphql-cache clear
      *
      */
     public function clear($args, $assoc_args)
     {
-        if (isset($assoc_args['zone'])) {
-            $zone = $assoc_args['zone'];
-            CacheManager::clear_zone($zone);
-            \WP_CLI::success("Cleared WPGraphQL Cache Zone '$zone'");
-        } else {
-            CacheManager::clear();
-            \WP_CLI::success('All WPGraphQL Cache Zones cleared');
-        }
+        CacheManager::clear();
+        \WP_CLI::success('All WPGraphQL Cache Zones cleared');
     }
 }

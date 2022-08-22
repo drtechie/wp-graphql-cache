@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WPGraphQL\Extensions\Cache;
 
 use WPGraphQL\Extensions\Cache\Backend\AbstractBackend;
+use GraphQL\Server\Helper;
 
 /**
  * Class that takes care of caching of full queries
@@ -12,19 +13,14 @@ use WPGraphQL\Extensions\Cache\Backend\AbstractBackend;
 class QueryCache extends AbstractCache
 {
     /**
-     * GraphQL Query name this cache should match against
+     * Cache group for setting caches
      */
-    protected $query_name = null;
-
-    /**
-     * True when running againts matched query name
-     */
-    protected $match = false;
+    protected $cache_group = null;
 
     function __construct($config)
     {
-        parent::__construct($config);
-        $this->query_name = $config['query_name'];
+        parent::__construct($config = []);
+        $this->cache_group = $config['cache_group'] ?? 'graphqlcache';
     }
 
     /**
@@ -38,10 +34,9 @@ class QueryCache extends AbstractCache
         }
 
         add_action(
-            'do_graphql_request',
+            'init_graphql_request',
             [$this, '__action_do_graphql_request'],
-            10,
-            4
+            1
         );
 
         add_action(
@@ -58,19 +53,26 @@ class QueryCache extends AbstractCache
             $this,
             '__action_graphql_response_set_headers',
         ]);
+
+        add_action('save_post', [
+            $this,
+            '__action_delete_cache_group',
+        ]);
     }
 
-    function __action_do_graphql_request(
-        ?string $query,
-        $operation,
-        $variables,
-        $params
-    ) {
+    function __action_do_graphql_request() {
+        $helper       = new Helper();
+		$params = $helper->parseHttpRequest();
+        if (empty($params)) {
+            return;
+        }
+
+        $query = $params->query;
+        $variables = $params->variables;
+
         if (empty($query)) {
             return;
         }
-        
-        $user_id = get_current_user_id();
 
         $args_hash = empty($variables)
             ? 'null'
@@ -78,7 +80,7 @@ class QueryCache extends AbstractCache
 
         $query_hash = Utils::hash($query);
 
-        $this->key = "query-{$this->query_name}-${user_id}-{$query_hash}-${args_hash}";
+        $this->key = "{$query_hash}-${args_hash}";
 
         $this->read_cache();
 
@@ -88,25 +90,10 @@ class QueryCache extends AbstractCache
             Utils::log('HIT query cache');
             $this->respond_and_exit();
         }
-
-        $current_query_name = Utils::get_query_name($query);
-
-        // If wildcard is passed just mark the cache as matched
-        if ($this->query_name === '*') {
-            $this->match = true;
-            return;
-        }
-
-        // Otherwise check it matches with registered query name
-        $this->match = $this->query_name === $current_query_name;
     }
 
     function __action_graphql_response_set_headers()
     {
-        if (!$this->has_match()) {
-            return;
-        }
-
         // Just add MISS header if we have match and have not already exited
         // with the cached response. respond_and_exit() handles the HIT header
         header('x-graphql-query-cache: MISS');
@@ -119,22 +106,23 @@ class QueryCache extends AbstractCache
         $query,
         $variables
     ) {
-        if (!$this->has_match()) {
-            return;
-        }
-
         if (!empty($response->errors)) {
             return;
         }
 
         // Save results as pre encoded json
         $this->backend->set(
-            $this->zone,
             $this->get_cache_key(),
             new CachedValue(wp_json_encode($response)),
+            $this->cache_group,
             $this->expire
         );
         Utils::log('Writing QueryCache ' . $this->key);
+    }
+
+    function __action_delete_cache_group()
+    {
+        return $this->backend->clear($this->cache_group);
     }
 
     function respond_and_exit()
@@ -150,13 +138,5 @@ class QueryCache extends AbstractCache
         // We stored the encoded JSON string so we can just respond with it here
         echo $this->get_cached_data();
         die();
-    }
-
-    /**
-     * Returns true when query should be cached
-     */
-    function has_match(): bool
-    {
-        return $this->match;
     }
 }

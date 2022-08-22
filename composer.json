@@ -10,39 +10,15 @@
             "role": "developer"
         }
     ],
-    "require-dev": {
-        "valu/wp-testing-tools": "^0.6.0",
-        "lucatume/wp-browser": "~2.2",
-        "phpunit/phpunit": "^8.0",
-        "codeception/module-asserts": "^1.0",
-        "codeception/module-phpbrowser": "^1.0",
-        "codeception/module-webdriver": "^1.0",
-        "codeception/module-db": "^1.0",
-        "codeception/module-filesystem": "^1.0",
-        "codeception/module-rest": "^1.0",
-        "codeception/module-cli": "^1.0",
-        "codeception/util-universalframework": "^1.0",
-        "vlucas/phpdotenv": "^4.1"
-    },
     "autoload": {
         "psr-4": {
             "WPGraphQL\\Extensions\\Cache\\": "src/"
         }
     },
-    "scripts": {
-        "wp-install": "wp-install --full --env-file .env --wp-composer-file composer.wp-install.json",
-        "wpunit": "codecept run wpunit",
-        "functional": "codecept run functional",
-        "test": [
-            "@wpunit",
-            "@functional"
-        ]
-    },
     "config": {
         "optimize-autoloader": true
     },
-    "support": {
-        "issues": "https://github.com/valu-digital/wp-graphql-cache/issues",
-        "source": "https://github.com/valu-digital/wp-graphql-cache"
+    "require": {
+        "webonyx/graphql-php": "^14.11"
     }
 }

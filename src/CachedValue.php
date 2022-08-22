@@ -16,15 +16,9 @@ class CachedValue
      */
     private $data = null;
 
-    /**
-     * Time in micro seconds when this cache entry was created
-     */
-    private $created = null;
-
     function __construct($data)
     {
         $this->data = $data;
-        $this->created = microtime(true);
     }
 
     /**
@@ -33,13 +27,5 @@ class CachedValue
     function get_data()
     {
         return $this->data;
-    }
-
-    /**
-     * Return creation time in micro seconds
-     */
-    function get_created()
-    {
-        return $this->created;
     }
 }
